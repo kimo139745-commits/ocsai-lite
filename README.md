@@ -94,8 +94,20 @@ Steps:
 The Render start command is:
 
 ```bash
-uvicorn app:app --host 0.0.0.0 --port $PORT
+uvicorn app:app --host 0.0.0.0 --port 10000
 ```
 
-Important: Render provides the correct port through the `$PORT` environment variable.
-Do not hard-code port `8000` for deployment.
+The app also includes a lightweight health check endpoint:
+
+```text
+/health
+```
+
+The sentence-transformers model is loaded lazily. This means Render can open
+the web port first, and the model is loaded only when someone submits the first
+score request. On Render's free plan, that first score calculation can take
+about 30-60 seconds while the model downloads or warms up. Later requests reuse
+the cached model and should be faster.
+
+Important: Do not hard-code local port `8000` for deployment. This Render setup
+uses port `10000` in `render.yaml`.
