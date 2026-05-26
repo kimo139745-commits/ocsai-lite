@@ -1,0 +1,75 @@
+[project]
+name = "Ocsai"
+version = "0.4"
+description = "Tools for training and using the Ocsai system for automated originality scoring."
+readme = "README.md"
+requires-python = ">=3.9"
+license = {text = "MIT"}
+authors = [
+    {name = "Peter Organisciak", email = "peter.organisciak@du.edu"}
+]
+keywords = [
+    "automated originality scoring",
+    "machine learning",
+    "natural language processing",
+    "educational psychology",
+    "research methods",
+    "education",
+]
+classifiers = [
+    "Development Status :: 3 - Alpha",
+    "Intended Audience :: Education",
+    "Intended Audience :: Science/Research",
+    "Topic :: Scientific/Engineering :: Artificial Intelligence",
+    "Topic :: Education :: Testing",
+    "License :: OSI Approved :: MIT License",
+    "Programming Language :: Python :: 3",
+]
+dependencies = [
+    "pingouin",
+    "pandas",
+    "pyyaml",
+    "pyreadstat",
+    "duckdb",
+    "tqdm",
+    "numpy",
+    "nest_asyncio",
+    "openai",
+    "anthropic",
+    "joblib>=1.4.2",
+    "openpyxl>=3.1.5",
+    "tiktoken>=0.9.0",
+]
+
+[project.urls]
+Website = "https://openscoring.du.edu"
+Repository = "https://www.github.com/massivetexts/ocsai"
+
+[project.optional-dependencies]
+dev = [
+    "pytest",
+    "pytest-docker-tools",
+    "redis",
+]
+
+[build-system]
+requires = ["setuptools>=42", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[tool.setuptools]
+include-package-data = true
+zip-safe = true
+packages = {find = {}}
+
+[dependency-groups]
+dev = [
+    "hdbscan>=0.8.40",
+    "ipykernel>=6.29.5",
+    "ipywidgets>=8.1.5",
+    "pip>=25.1.1",
+    "pytest>=8.3.5",
+    "pytest-docker-tools>=3.1.3",
+    "python-dotenv>=1.1.0",
+    "redis>=5.2.1",
+    "safetensors>=0.5.3",
+]

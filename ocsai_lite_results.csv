@@ -1,0 +1,10 @@
+participant_id,target_object,question,response,novelty_score,usefulness_score,creativity_score
+P001,brick,What is an original use for a brick?,use a brick as a doorstop,44.51,59.08,51.8
+P002,brick,What is an original use for a brick?,use a brick as a heat-retaining cooking stone,45.48,57.56,51.52
+P003,brick,What is an original use for a brick?,use a brick as a musical percussion instrument,46.42,55.34,50.88
+P004,paperclip,What is an original use for a paperclip?,use a paperclip as a phone stand,44.21,67.49,55.85
+P005,paperclip,What is an original use for a paperclip?,use a paperclip to reset a router,54.86,51.44,53.15
+P006,paperclip,What is an original use for a paperclip?,use a paperclip as miniature artwork,47.1,64.28,55.69
+P007,fork,What is an original use for a fork?,use a fork as a garden marker,41.92,57.55,49.73
+P008,fork,What is an original use for a fork?,use a fork as a candle holder,49.19,52.84,51.02
+P009,fork,What is an original use for a fork?,use a fork to texture clay,49.32,51.44,50.38

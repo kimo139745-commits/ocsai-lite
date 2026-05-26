@@ -1,0 +1,15 @@
+participant_id,target_object,question,response,novelty_score,usefulness_score,creativity_score
+p1,brick,What is an original use for a brick?,artwork,100.0,21.7,60.85
+p1,brick,What is an original use for a brick?,artwork,0.0,21.7,10.85
+p1,brick,What is an original use for a brick?,artwork,0.0,21.7,10.85
+p1,brick,What is an original use for a brick?,artwork,0.0,21.7,10.85
+p1,brick,What is an original use for a brick?,artwork,0.0,21.7,10.85
+p1,brick,What is an original use for a brick?,cell,82.67,16.52,49.6
+p1,brick,What is an original use for a brick?,weapon,63.9,20.45,42.18
+p1,brick,What is an original use for a brick?,food,69.14,19.67,44.4
+p1,brick,What is an original use for a brick?,instrument,65.28,10.3,37.79
+p1,brick,What is an original use for a brick?,phillow,80.02,12.54,46.28
+p1,brick,What is an original use for a brick?,bed,76.19,4.48,40.34
+p1,brick,What is an original use for a brick?,cell,72.68,16.52,44.6
+p1,brick,What is an original use for a brick?,weapon,60.23,20.45,40.34
+p1,brick,What is an original use for a brick?,sex,66.43,9.51,37.97
