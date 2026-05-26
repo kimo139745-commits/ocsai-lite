@@ -28,7 +28,6 @@ from functools import lru_cache
 
 import numpy as np
 import pandas as pd
-from sentence_transformers import SentenceTransformer
 from sklearn.metrics.pairwise import cosine_similarity
 
 
@@ -45,12 +44,18 @@ RESULT_COLUMNS = [
 
 
 @lru_cache(maxsize=1)
-def get_embedding_model() -> SentenceTransformer:
+def get_model():
     """Load the embedding model once and reuse it for every web request.
 
-    Loading the model can take a few seconds. The lru_cache decorator keeps the
-    loaded model in memory so each submit click does not reload it from disk.
+    This function intentionally imports sentence-transformers inside the
+    function body. That keeps FastAPI startup fast on Render, because the model
+    is not imported or downloaded before uvicorn opens the web port.
+
+    The first /score request may take 30-60 seconds on a free Render instance.
+    After that, lru_cache keeps the loaded model in memory for later requests.
     """
+    from sentence_transformers import SentenceTransformer
+
     return SentenceTransformer(EMBEDDING_MODEL_NAME)
 
 
@@ -64,7 +69,7 @@ def score_single_response(
     target_object: str,
     question: str,
     response: str,
-    previous_rows: pd.DataFrame | None = None,
+    previous_rows: pd.DataFrame | list[dict[str, object]] | None = None,
 ) -> dict[str, float]:
     """Score one new AUT response.
 
@@ -72,13 +77,20 @@ def score_single_response(
     only against rows with the same target_object, so brick responses are not
     compared with paperclip or fork responses.
     """
-    model = get_embedding_model()
+    model = get_model()
 
-    if previous_rows is None or previous_rows.empty:
+    if previous_rows is None:
+        previous_df = pd.DataFrame(columns=RESULT_COLUMNS)
+    elif isinstance(previous_rows, list):
+        previous_df = pd.DataFrame(previous_rows)
+    else:
+        previous_df = previous_rows
+
+    if previous_df.empty:
         same_target_responses: list[str] = []
     else:
-        same_target = previous_rows[
-            previous_rows["target_object"].astype(str).str.lower()
+        same_target = previous_df[
+            previous_df["target_object"].astype(str).str.lower()
             == target_object.lower()
         ]
         same_target_responses = same_target["response"].dropna().astype(str).tolist()
