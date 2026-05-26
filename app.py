@@ -17,47 +17,79 @@ Then open:
 
 from __future__ import annotations
 
+import csv
 from pathlib import Path
 
-import pandas as pd
 from fastapi import FastAPI, Form, Request
 from fastapi.responses import HTMLResponse, JSONResponse
 from fastapi.staticfiles import StaticFiles
 from fastapi.templating import Jinja2Templates
 
-from ocsai_lite import RESULT_COLUMNS, average_creativity_by_target, score_single_response
-
 
 BASE_DIR = Path(__file__).resolve().parent
 RESULTS_CSV = BASE_DIR / "web_ocsai_lite_results.csv"
+RESULT_COLUMNS = [
+    "participant_id",
+    "target_object",
+    "question",
+    "response",
+    "novelty_score",
+    "usefulness_score",
+    "creativity_score",
+]
+
+print("APP IMPORTED")
 
 app = FastAPI(title="AI Creativity Evaluator (OCSAI-lite)")
 app.mount("/static", StaticFiles(directory=BASE_DIR / "static"), name="static")
 templates = Jinja2Templates(directory=BASE_DIR / "templates")
+print("FASTAPI APP CREATED")
 
 
 def ensure_results_csv() -> None:
     """Create the results CSV with headers if it does not exist yet."""
     if not RESULTS_CSV.exists():
-        pd.DataFrame(columns=RESULT_COLUMNS).to_csv(RESULTS_CSV, index=False)
+        with RESULTS_CSV.open("w", newline="", encoding="utf-8") as csv_file:
+            writer = csv.DictWriter(csv_file, fieldnames=RESULT_COLUMNS)
+            writer.writeheader()
 
 
-def read_results() -> pd.DataFrame:
+def read_results() -> list[dict[str, str]]:
     """Read saved web results from disk."""
     ensure_results_csv()
-    return pd.read_csv(RESULTS_CSV)
+    with RESULTS_CSV.open("r", newline="", encoding="utf-8") as csv_file:
+        return list(csv.DictReader(csv_file))
 
 
-def append_result(row: dict[str, object]) -> pd.DataFrame:
+def append_result(row: dict[str, object]) -> list[dict[str, str]]:
     """Append one scored response to web_ocsai_lite_results.csv."""
-    existing = read_results()
-    new_row = pd.DataFrame([row], columns=RESULT_COLUMNS)
-    if existing.empty:
-        updated = new_row
-    else:
-        updated = pd.concat([existing, new_row], ignore_index=True)
-    updated.to_csv(RESULTS_CSV, index=False)
-    return updated
+    ensure_results_csv()
+    with RESULTS_CSV.open("a", newline="", encoding="utf-8") as csv_file:
+        writer = csv.DictWriter(csv_file, fieldnames=RESULT_COLUMNS)
+        writer.writerow({column: row.get(column, "") for column in RESULT_COLUMNS})
+    return read_results()
+
+
+def average_creativity_by_target(rows: list[dict[str, str]]) -> dict[str, float]:
+    """Calculate average creativity without importing the ML scoring module."""
+    totals = {"brick": 0.0, "paperclip": 0.0, "fork": 0.0}
+    counts = {"brick": 0, "paperclip": 0, "fork": 0}
+
+    for row in rows:
+        target = str(row.get("target_object", "")).lower()
+        if target not in totals:
+            continue
+        try:
+            score = float(row.get("creativity_score", 0))
+        except (TypeError, ValueError):
+            continue
+        totals[target] += score
+        counts[target] += 1
+
+    return {
+        target: round(totals[target] / counts[target], 2) if counts[target] else 0.0
+        for target in totals
+    }
 
 
 @app.get("/", response_class=HTMLResponse)
@@ -92,6 +124,10 @@ def score(
     response: str = Form(...),
 ) -> JSONResponse:
     """Score one form submission and append it to the results CSV."""
+    # Import the scoring code only when the user actually submits a response.
+    # This keeps Render startup fast enough for the port detector.
+    from ocsai_lite import score_single_response
+
     participant_id = participant_id.strip()
     target_object = target_object.strip().lower()
     question = question.strip()
