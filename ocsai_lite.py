@@ -26,10 +26,6 @@ from __future__ import annotations
 
 from functools import lru_cache
 
-import numpy as np
-import pandas as pd
-from sklearn.metrics.pairwise import cosine_similarity
-
 
 EMBEDDING_MODEL_NAME = "sentence-transformers/all-MiniLM-L6-v2"
 RESULT_COLUMNS = [
@@ -61,6 +57,8 @@ def get_model():
 
 def scale_0_to_100(value: float) -> float:
     """Convert a 0-1 cosine-style score into a clean 0-100 score."""
+    import numpy as np
+
     clipped = float(np.clip(value, 0.0, 1.0))
     return round(clipped * 100, 2)
 
@@ -69,7 +67,7 @@ def score_single_response(
     target_object: str,
     question: str,
     response: str,
-    previous_rows: pd.DataFrame | list[dict[str, object]] | None = None,
+    previous_rows=None,
 ) -> dict[str, float]:
     """Score one new AUT response.
 
@@ -77,6 +75,10 @@ def score_single_response(
     only against rows with the same target_object, so brick responses are not
     compared with paperclip or fork responses.
     """
+    import numpy as np
+    import pandas as pd
+    from sklearn.metrics.pairwise import cosine_similarity
+
     model = get_model()
 
     if previous_rows is None:
@@ -123,8 +125,13 @@ def score_single_response(
     }
 
 
-def average_creativity_by_target(results_df: pd.DataFrame) -> dict[str, float]:
+def average_creativity_by_target(results_df) -> dict[str, float]:
     """Return average creativity for the three supported AUT target objects."""
+    import pandas as pd
+
+    if isinstance(results_df, list):
+        results_df = pd.DataFrame(results_df)
+
     averages = {"brick": 0.0, "paperclip": 0.0, "fork": 0.0}
     if results_df.empty:
         return averages
