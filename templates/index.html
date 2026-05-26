@@ -1,0 +1,167 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>AI Creativity Evaluator (OCSAI-lite)</title>
+  <link rel="stylesheet" href="/static/style.css">
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+</head>
+<body>
+  <main class="page-shell">
+    <section class="card header-card">
+      <h1>AI Creativity Evaluator (OCSAI-lite)</h1>
+      <p>Enter an Alternative Uses Task response and get embedding-based creativity scores.</p>
+    </section>
+
+    <section class="layout-grid">
+      <form id="score-form" class="card form-card">
+        <label for="participant_id">Participant ID</label>
+        <input id="participant_id" name="participant_id" type="text" placeholder="P010" required>
+
+        <label for="target_object">Target Object</label>
+        <select id="target_object" name="target_object" required>
+          <option value="brick">brick</option>
+          <option value="paperclip">paperclip</option>
+          <option value="fork">fork</option>
+        </select>
+
+        <label for="question">Question</label>
+        <textarea id="question" name="question" rows="3" required>What is an original use for a brick?</textarea>
+
+        <label for="response">Response</label>
+        <textarea id="response" name="response" rows="4" placeholder="use a brick as..." required></textarea>
+
+        <div class="button-row">
+          <button type="submit">Submit</button>
+          <button type="reset" class="secondary">Reset</button>
+        </div>
+
+        <p id="status-message" class="status-message" aria-live="polite"></p>
+      </form>
+
+      <section class="card result-card">
+        <h2>Current Result</h2>
+        <div class="score-grid">
+          <article class="score-tile">
+            <span>Novelty Score</span>
+            <strong id="novelty-score">0</strong>
+          </article>
+          <article class="score-tile">
+            <span>Usefulness Score</span>
+            <strong id="usefulness-score">0</strong>
+          </article>
+          <article class="score-tile">
+            <span>Creativity Score</span>
+            <strong id="creativity-score">0</strong>
+          </article>
+        </div>
+        <div class="chart-box">
+          <canvas id="score-chart"></canvas>
+        </div>
+      </section>
+    </section>
+
+    <section class="card">
+      <h2>Average Creativity by Target Object</h2>
+      <div class="chart-box wide">
+        <canvas id="average-chart"></canvas>
+      </div>
+    </section>
+  </main>
+
+  <script>
+    const initialAverages = {{ averages | tojson }};
+
+    const questionByTarget = {
+      brick: "What is an original use for a brick?",
+      paperclip: "What is an original use for a paperclip?",
+      fork: "What is an original use for a fork?"
+    };
+
+    const scoreChart = new Chart(document.getElementById("score-chart"), {
+      type: "bar",
+      data: {
+        labels: ["Novelty", "Usefulness", "Creativity"],
+        datasets: [{
+          label: "Current scores",
+          data: [0, 0, 0],
+          backgroundColor: ["#5b8def", "#41b883", "#f0a23a"],
+          borderRadius: 6
+        }]
+      },
+      options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        scales: { y: { min: 0, max: 100 } },
+        plugins: { legend: { display: false } }
+      }
+    });
+
+    const averageChart = new Chart(document.getElementById("average-chart"), {
+      type: "bar",
+      data: {
+        labels: ["brick", "paperclip", "fork"],
+        datasets: [{
+          label: "Average creativity",
+          data: [initialAverages.brick, initialAverages.paperclip, initialAverages.fork],
+          backgroundColor: ["#7c8ea3", "#5b8def", "#41b883"],
+          borderRadius: 6
+        }]
+      },
+      options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        scales: { y: { min: 0, max: 100 } },
+        plugins: { legend: { display: false } }
+      }
+    });
+
+    const form = document.getElementById("score-form");
+    const statusMessage = document.getElementById("status-message");
+    const targetObject = document.getElementById("target_object");
+    const question = document.getElementById("question");
+
+    targetObject.addEventListener("change", () => {
+      question.value = questionByTarget[targetObject.value];
+    });
+
+    form.addEventListener("submit", async (event) => {
+      event.preventDefault();
+      statusMessage.textContent = "Scoring...";
+
+      const response = await fetch("/score", {
+        method: "POST",
+        body: new FormData(form)
+      });
+
+      const data = await response.json();
+      if (!response.ok) {
+        statusMessage.textContent = data.error || "Something went wrong.";
+        return;
+      }
+
+      const scores = data.scores;
+      document.getElementById("novelty-score").textContent = scores.novelty_score;
+      document.getElementById("usefulness-score").textContent = scores.usefulness_score;
+      document.getElementById("creativity-score").textContent = scores.creativity_score;
+
+      scoreChart.data.datasets[0].data = [
+        scores.novelty_score,
+        scores.usefulness_score,
+        scores.creativity_score
+      ];
+      scoreChart.update();
+
+      averageChart.data.datasets[0].data = [
+        data.averages.brick,
+        data.averages.paperclip,
+        data.averages.fork
+      ];
+      averageChart.update();
+
+      statusMessage.textContent = "Saved to web_ocsai_lite_results.csv";
+    });
+  </script>
+</body>
+</html>
