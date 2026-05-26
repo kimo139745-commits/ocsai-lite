@@ -32,13 +32,8 @@ BASE_DIR = Path(__file__).resolve().parent
 RESULTS_CSV = BASE_DIR / "web_ocsai_lite_results.csv"
 
 app = FastAPI(title="AI Creativity Evaluator (OCSAI-lite)")
-STATIC_DIR = BASE_DIR / "static"
-TEMPLATES_DIR = BASE_DIR / "templates"
-
-if STATIC_DIR.exists():
-    app.mount("/static", StaticFiles(directory=STATIC_DIR), name="static")
-
-templates = Jinja2Templates(directory=TEMPLATES_DIR)
+app.mount("/static", StaticFiles(directory=BASE_DIR / "static"), name="static")
+templates = Jinja2Templates(directory=BASE_DIR / "templates")
 
 
 def ensure_results_csv() -> None:
@@ -68,14 +63,6 @@ def append_result(row: dict[str, object]) -> pd.DataFrame:
 @app.get("/", response_class=HTMLResponse)
 def index(request: Request) -> HTMLResponse:
     """Render the main page with the current average creativity values."""
-    if not TEMPLATES_DIR.exists() or not (TEMPLATES_DIR / "index.html").exists():
-        return HTMLResponse(
-            """
-            <h1>OCSAI-lite server running</h1>
-            <p>FastAPI is working, but templates/index.html is missing.</p>
-            """
-        )
-
     results = read_results()
     averages = average_creativity_by_target(results)
     return templates.TemplateResponse(
@@ -85,6 +72,16 @@ def index(request: Request) -> HTMLResponse:
             "averages": averages,
         },
     )
+
+
+@app.get("/health")
+def health() -> dict[str, str]:
+    """Fast health check for Render.
+
+    This endpoint does not load the sentence-transformer model. Render can call
+    it immediately after startup to confirm that the web port is open.
+    """
+    return {"status": "ok"}
 
 
 @app.post("/score")
